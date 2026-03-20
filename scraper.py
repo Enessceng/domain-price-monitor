@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 
 ###################################
-# CHROME (DEBUG MODE)
+# CHROME (GITHUB MODE)
 ###################################
 
 chrome_options = Options()
@@ -17,13 +17,13 @@ chrome_options = Options()
 # EKLENDİ → site bot sanmasın diye
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-# HEADLESS KAPALI → Chrome'u göreceksin
-# chrome_options.add_argument("--headless=new")
+# GITHUB MODE → GitHub runner için gerekli
+chrome_options.add_argument("--headless=new")
 
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
-# EKLENDİ → GitHub runner stabilitesi
+# GitHub runner stabilitesi
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
