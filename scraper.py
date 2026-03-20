@@ -261,16 +261,7 @@ final_df["Date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # CSV
 ###################################
 
-import os
-
-file_exists = os.path.isfile("domain_prices.csv")
-
-final_df.to_csv(
-    "domain_prices.csv",
-    mode="a",
-    header=not file_exists,
-    index=False
-)
+final_df.to_csv("domain_prices.csv", index=False)
 
 driver.quit()
 
