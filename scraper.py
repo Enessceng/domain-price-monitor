@@ -18,7 +18,6 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
 
 driver = webdriver.Chrome(options=chrome_options)
-
 driver.implicitly_wait(10)
 
 ###################################
@@ -38,7 +37,6 @@ prices = []
 wanted = [".co", ".com", ".org", ".io", ".net"]
 
 for row in rows:
-
     try:
         tld = row.find_element(By.CSS_SELECTOR, "td.data-row-name a").text
         price = row.find_element(By.CSS_SELECTOR, "td.data-row-reg_price span.value").text
@@ -63,7 +61,7 @@ df_dynadot = pd.DataFrame({
 
 driver.get("https://www.namecheap.com/domains/full-tld-list/")
 
-time.sleep(8)
+time.sleep(10)
 
 rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
 
@@ -74,7 +72,6 @@ prices = []
 wanted = [".co", ".com", ".org", ".io", ".net"]
 
 for row in rows:
-
     try:
         cols = row.find_elements(By.TAG_NAME, "td")
 
@@ -150,9 +147,9 @@ df_hostinger = pd.DataFrame({
 
 driver.get("https://porkbun.com/products/domains")
 
-time.sleep(6)
+time.sleep(10)
 
-rows = driver.find_elements(By.CSS_SELECTOR, "div.domainsPricingAllExtensionsItem")
+rows = driver.find_elements(By.CSS_SELECTOR, "[data-extension]")
 
 providers = []
 tlds = []
@@ -161,18 +158,17 @@ prices = []
 wanted = ["com","org","net","co","io"]
 
 for row in rows:
+    try:
+        extension = row.get_attribute("data-extension")
+        price = row.get_attribute("data-price-registration")
 
-    extension = row.get_attribute("data-extension")
-    price = row.get_attribute("data-price-registration")
+        if extension in wanted and price:
+            providers.append("Porkbun")
+            tlds.append("." + extension)
+            prices.append("$" + str(float(price)/100))
 
-    if price is None:
+    except:
         continue
-
-    if extension in wanted:
-
-        providers.append("Porkbun")
-        tlds.append("." + extension)
-        prices.append("$" + str(float(price)/100))
 
 df_porkbun = pd.DataFrame({
     "Provider": providers,
@@ -212,7 +208,6 @@ for row in rows:
     price = cols[1].text.strip()
 
     if tld in wanted:
-
         providers.append("IONOS")
         tlds.append("." + tld)
         prices.append(price)
