@@ -3,18 +3,24 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
 import pandas as pd
 import time
 from datetime import datetime
 
+###################################
+# CHROME SETTINGS
+###################################
+
 chrome_options = Options()
-chrome_options.add_argument("--headless")
+chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--window-size=1920,1080")
 
 driver = webdriver.Chrome(options=chrome_options)
 
+driver.implicitly_wait(10)
 wait = WebDriverWait(driver, 20)
 
 ###################################
@@ -23,9 +29,9 @@ wait = WebDriverWait(driver, 20)
 
 driver.get("https://www.dynadot.com/domain/prices")
 
-rows = wait.until(
-    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
-)
+time.sleep(5)
+
+rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
 
 providers = []
 tlds = []
@@ -59,9 +65,9 @@ df_dynadot = pd.DataFrame({
 
 driver.get("https://www.namecheap.com/domains/full-tld-list/")
 
-rows = wait.until(
-    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
-)
+time.sleep(5)
+
+rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
 
 providers = []
 tlds = []
@@ -104,6 +110,10 @@ final_df = pd.concat(
 )
 
 final_df["Date"] = datetime.today().date()
+
+###################################
+# SAVE
+###################################
 
 final_df.to_csv("domain_prices.csv", index=False)
 
