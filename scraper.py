@@ -137,22 +137,24 @@ for tld_search in wanted:
     search.clear()
     time.sleep(1)
     search.send_keys(tld_search)
-    time.sleep(2)
+    time.sleep(3)
 
-    try:
-        row = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr"))
-        )
+    rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
 
-        tld = row.find_element(By.CSS_SELECTOR, "td.tlds-table__tld-cell a").text
-        price = row.find_element(By.CSS_SELECTOR, ".tlds-table__first-year-price").text
+    for row in rows:
+        try:
 
-        providers.append("Hostinger")
-        tlds.append(tld)
-        prices.append(price)
+            tld = row.find_element(By.CSS_SELECTOR, "td.tlds-table__tld-cell a").text.strip()
+            price = row.find_element(By.CSS_SELECTOR, ".tlds-table__first-year-price").text
 
-    except:
-        continue
+            if tld == tld_search:
+
+                providers.append("Hostinger")
+                tlds.append(tld)
+                prices.append(price)
+
+        except:
+            continue
 
 df_hostinger = pd.DataFrame({
     "Provider": providers,
