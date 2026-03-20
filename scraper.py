@@ -9,25 +9,24 @@ import time
 from datetime import datetime
 
 ###################################
-# HEADLESS CHROME (GITHUB)
+# CHROME (DEBUG MODE)
 ###################################
 
 chrome_options = Options()
 
-# EKLENDİ → GitHub server ekranı olmadığı için
-chrome_options.add_argument("--headless=new")
+# EKLENDİ → site bot sanmasın diye
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-# ZATEN VARDI
+# HEADLESS KAPALI → Chrome'u göreceksin
+# chrome_options.add_argument("--headless=new")
+
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
-# EKLENDİ → bazı Linux runner'larda stabilite
+# EKLENDİ → GitHub runner stabilitesi
 chrome_options.add_argument("--disable-gpu")
-
-# EKLENDİ → headless chrome crash önleme
 chrome_options.add_argument("--remote-debugging-port=9222")
 
-# ZATEN VARDI
 chrome_options.add_argument("--window-size=1920,1080")
 
 driver = webdriver.Chrome(options=chrome_options)
@@ -37,11 +36,15 @@ wait = WebDriverWait(driver, 20)
 # DYNADOT
 ###################################
 
+print("Opening Dynadot")
+
 driver.get("https://www.dynadot.com/domain/prices")
 
 rows = wait.until(
     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
 )
+
+print("Dynadot loaded")
 
 providers = []
 tlds = []
@@ -72,9 +75,13 @@ df_dynadot = pd.DataFrame({
 # NAMECHEAP
 ###################################
 
+print("Opening Namecheap")
+
 driver.get("https://www.namecheap.com/domains/full-tld-list/")
 
 time.sleep(5)
+
+print("Namecheap loaded")
 
 rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
 
@@ -109,11 +116,15 @@ df_namecheap = pd.DataFrame({
 # HOSTINGER
 ###################################
 
+print("Opening Hostinger")
+
 driver.get("https://www.hostinger.com/pricing/domains")
 
 search = wait.until(
     EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='Find a domain extension']"))
 )
+
+print("Hostinger loaded")
 
 providers = []
 tlds = []
@@ -153,9 +164,13 @@ df_hostinger = pd.DataFrame({
 # PORKBUN
 ###################################
 
+print("Opening Porkbun")
+
 driver.get("https://porkbun.com/products/domains")
 
 time.sleep(6)
+
+print("Porkbun loaded")
 
 rows = driver.find_elements(By.CSS_SELECTOR, "div.domainsPricingAllExtensionsItem")
 
@@ -186,9 +201,13 @@ df_porkbun = pd.DataFrame({
 # IONOS
 ###################################
 
+print("Opening IONOS")
+
 driver.get("https://www.ionos.com/domains/domain-name-prices")
 
 time.sleep(5)
+
+print("IONOS loaded")
 
 dropdown = Select(driver.find_element(By.TAG_NAME, "select"))
 dropdown.select_by_visible_text("500")
