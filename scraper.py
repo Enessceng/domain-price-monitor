@@ -1,80 +1,44 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
+from selenium.webdriver.support.ui import Select
 import pandas as pd
 import time
 from datetime import datetime
-import logging
-import os
 
-# LOG ADJUST
-
-
-logging.basicConfig(
-    filename="scraper.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-logging.info("Script started")
-
-
-# DRIVER
-
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-
-driver = webdriver.Chrome(
-    service=Service(ChromeDriverManager().install()),
-    options=chrome_options
-)
-
+driver = webdriver.Chrome()
 wait = WebDriverWait(driver, 20)
 
-wanted = [".co", ".com", ".org", ".io", ".net"]
-
+###################################
 # DYNADOT
+###################################
+
+driver.get("https://www.dynadot.com/domain/prices")
+
+rows = wait.until(
+    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
+)
 
 providers = []
 tlds = []
 prices = []
 
-try:
+wanted = [".co", ".com", ".org", ".io", ".net"]
 
-    driver.get("https://www.dynadot.com/domain/prices")
+for row in rows:
 
-    rows = wait.until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
-    )
+    try:
+        tld = row.find_element(By.CSS_SELECTOR, "td.data-row-name a").text
+        price = row.find_element(By.CSS_SELECTOR, "td.data-row-reg_price span.value").text
 
-    for row in rows:
+        if tld in wanted:
+            providers.append("Dynadot")
+            tlds.append(tld)
+            prices.append(price)
 
-        try:
-            tld = row.find_element(By.CSS_SELECTOR, "td.data-row-name a").text
-            price = row.find_element(By.CSS_SELECTOR, "td.data-row-reg_price span.value").text
-
-            if tld in wanted:
-                providers.append("Dynadot")
-                tlds.append(tld)
-                prices.append(price)
-
-        except:
-            continue
-
-    logging.info("Dynadot scraped successfully")
-
-except Exception as e:
-    logging.error(f"Dynadot scraping failed: {e}")
+    except:
+        continue
 
 df_dynadot = pd.DataFrame({
     "Provider": providers,
@@ -82,40 +46,40 @@ df_dynadot = pd.DataFrame({
     "Price": prices
 })
 
+###################################
 # NAMECHEAP
+###################################
+
+driver.get("https://www.namecheap.com/domains/full-tld-list/")
+
+rows = wait.until(
+    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
+)
 
 providers = []
 tlds = []
 prices = []
 
-try:
+wanted = [".co", ".com", ".org", ".io", ".net"]
 
-    driver.get("https://www.namecheap.com/domains/full-tld-list/")
+for row in rows:
 
-    time.sleep(5)
+    try:
+        cols = row.find_elements(By.TAG_NAME, "td")
 
-    rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
-
-    for row in rows:
-
-        try:
-            cols = row.find_elements(By.TAG_NAME, "td")
-
-            tld = cols[0].text.replace("*","")
-            price = cols[4].text.split("\n")[0]
-
-            if tld in wanted:
-                providers.append("Namecheap")
-                tlds.append(tld)
-                prices.append(price)
-
-        except:
+        if len(cols) < 5:
             continue
 
-    logging.info("Namecheap scraped successfully")
+        tld = cols[0].text.replace("*","").strip()
+        price = cols[4].text.split("\n")[0]
 
-except Exception as e:
-    logging.error(f"Namecheap scraping failed: {e}")
+        if tld in wanted:
+            providers.append("Namecheap")
+            tlds.append(tld)
+            prices.append(price)
+
+    except:
+        continue
 
 df_namecheap = pd.DataFrame({
     "Provider": providers,
@@ -123,48 +87,47 @@ df_namecheap = pd.DataFrame({
     "Price": prices
 })
 
-
+###################################
 # HOSTINGER
+###################################
 
+driver.get("https://www.hostinger.com/pricing/domains")
+
+search = wait.until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='Find a domain extension']"))
+)
 
 providers = []
 tlds = []
 prices = []
 
-try:
+seen=set()
 
-    driver.get("https://www.hostinger.com/pricing/domains")
+wanted = [".com", ".org", ".net", ".co", ".io"]
 
-    search = wait.until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='Find a domain extension']"))
-    )
+for tld_search in wanted:
 
-    for tld_search in wanted:
+    search.clear()
+    time.sleep(1)
+    search.send_keys(tld_search)
+    time.sleep(2)
 
-        search.clear()
-        time.sleep(1)
-        search.send_keys(tld_search)
-        time.sleep(2)
+    try:
+        row = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr"))
+        )
 
-        try:
-            row = wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr"))
-            )
+        tld = row.find_element(By.CSS_SELECTOR, "td.tlds-table__tld-cell a").text
+        price = row.find_element(By.CSS_SELECTOR, ".tlds-table__first-year-price").text
 
-            tld = row.find_element(By.CSS_SELECTOR, "td.tlds-table__tld-cell a").text
-            price = row.find_element(By.CSS_SELECTOR, ".tlds-table__first-year-price").text
-
+        if tld not in seen:
+            seen.add(tld)
             providers.append("Hostinger")
             tlds.append(tld)
             prices.append(price)
 
-        except:
-            continue
-
-    logging.info("Hostinger scraped successfully")
-
-except Exception as e:
-    logging.error(f"Hostinger scraping failed: {e}")
+    except:
+        continue
 
 df_hostinger = pd.DataFrame({
     "Provider": providers,
@@ -172,36 +135,35 @@ df_hostinger = pd.DataFrame({
     "Price": prices
 })
 
-
+###################################
 # PORKBUN
+###################################
+
+driver.get("https://porkbun.com/products/domains")
+
+time.sleep(5)
+
+rows = driver.find_elements(By.CSS_SELECTOR, "div.domainsPricingAllExtensionsItem")
 
 providers = []
 tlds = []
 prices = []
 
-try:
+wanted = ["com", "org", "net", "co", "io"]
 
-    driver.get("https://porkbun.com/products/domains")
+for row in rows:
 
-    time.sleep(5)
+    extension = row.get_attribute("data-extension")
+    price = row.get_attribute("data-price-registration")
 
-    rows = driver.find_elements(By.CSS_SELECTOR, "div.domainsPricingAllExtensionsItem")
+    if price is None:
+        continue
 
-    for row in rows:
+    if extension in wanted:
 
-        extension = row.get_attribute("data-extension")
-        price = row.get_attribute("data-price-registration")
-
-        if extension in ["com","org","net","co","io"]:
-
-            providers.append("Porkbun")
-            tlds.append("." + extension)
-            prices.append("$" + str(float(price)/100))
-
-    logging.info("Porkbun scraped successfully")
-
-except Exception as e:
-    logging.error(f"Porkbun scraping failed: {e}")
+        providers.append("Porkbun")
+        tlds.append("." + extension)
+        prices.append("$" + str(float(price)/100))
 
 df_porkbun = pd.DataFrame({
     "Provider": providers,
@@ -209,47 +171,42 @@ df_porkbun = pd.DataFrame({
     "Price": prices
 })
 
+###################################
 # IONOS
+###################################
 
-providers = []
-tlds = []
-prices = []
+driver.get("https://www.ionos.com/domains/domain-name-prices")
 
-try:
+time.sleep(5)
 
-    driver.get("https://www.ionos.com/domains/domain-name-prices")
+dropdown = Select(driver.find_element(By.TAG_NAME, "select"))
+dropdown.select_by_visible_text("500")
 
-    time.sleep(5)
+time.sleep(4)
 
-    dropdown = Select(driver.find_element(By.TAG_NAME, "select"))
-    dropdown.select_by_visible_text("500")
+rows = driver.find_elements(By.CSS_SELECTOR, "tbody tr")
 
-    time.sleep(4)
+wanted = {"com","org","net","co","io"}
 
-    rows = driver.find_elements(By.CSS_SELECTOR, "tbody tr")
+providers=[]
+tlds=[]
+prices=[]
 
-    wanted_set = {"com","org","net","co","io"}
+for row in rows:
 
-    for row in rows:
+    cols = row.find_elements(By.TAG_NAME,"td")
 
-        cols = row.find_elements(By.TAG_NAME,"td")
+    if len(cols) < 2:
+        continue
 
-        if len(cols) < 2:
-            continue
+    tld = cols[0].text.strip().replace(".","").lower()
+    price = cols[1].text.strip()
 
-        tld = cols[0].text.strip().replace(".","").lower()
-        price = cols[1].text.strip()
+    if tld in wanted:
 
-        if tld in wanted_set:
-
-            providers.append("IONOS")
-            tlds.append("." + tld)
-            prices.append(price)
-
-    logging.info("IONOS scraped successfully")
-
-except Exception as e:
-    logging.error(f"IONOS scraping failed: {e}")
+        providers.append("IONOS")
+        tlds.append("." + tld)
+        prices.append(price)
 
 df_ionos = pd.DataFrame({
     "Provider":providers,
@@ -257,8 +214,9 @@ df_ionos = pd.DataFrame({
     "Price":prices
 })
 
-
-# DATAFRAME MERGE
+###################################
+# MERGE
+###################################
 
 final_df = pd.concat(
     [df_dynadot, df_namecheap, df_hostinger, df_porkbun, df_ionos],
@@ -267,42 +225,13 @@ final_df = pd.concat(
 
 final_df["Date"] = datetime.today().date()
 
-# CSV(APPEND)
+###################################
+# SAVE FILE
+###################################
 
-
-file_name = "domain_prices.csv"
-
-try:
-
-    if os.path.exists(file_name):
-
-        final_df.to_csv(
-            file_name,
-            mode="a",
-            header=False,
-            index=False
-        )
-
-    else:
-
-        final_df.to_csv(
-            file_name,
-            mode="w",
-            header=True,
-            index=False
-        )
-
-    logging.info("Data saved successfully")
-
-except Exception as e:
-
-    logging.error(f"Saving CSV failed: {e}")
-
-# DRIVER CLOSE
-
+final_df.to_excel("Alll_TLDs.xlsx", index=False)
 
 driver.quit()
 
-logging.info("Script finished successfully")
-
+print("Excel file created successfully!")
 print(final_df)
