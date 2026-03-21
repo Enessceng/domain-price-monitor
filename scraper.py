@@ -255,6 +255,20 @@ final_df = pd.concat(
     ignore_index=True
 )
 
+# EKLENDİ → Power BI hata vermesin diye Price kolonunu temizliyoruz
+final_df["Price"] = (
+    final_df["Price"]
+    .astype(str)
+    .str.replace("$","", regex=False)
+    .str.replace("€","", regex=False)
+    .str.replace("£","", regex=False)
+    .str.replace(",","", regex=False)
+    .str.strip()
+)
+
+# EKLENDİ → Price kolonunu decimal number'a çeviriyoruz
+final_df["Price"] = pd.to_numeric(final_df["Price"], errors="coerce")
+
 final_df["Date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 ###################################
