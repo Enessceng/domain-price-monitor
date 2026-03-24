@@ -8,22 +8,20 @@ import pandas as pd
 import time
 from datetime import datetime
 
-###################################
-# CHROME (GITHUB MODE)
-###################################
+
 
 chrome_options = Options()
 
-# EKLENDİ → site bot sanmasın diye
+
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-# GITHUB MODE → GitHub runner için gerekli
+
 chrome_options.add_argument("--headless=new")
 
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
-# GitHub runner stabilitesi
+
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -32,9 +30,7 @@ chrome_options.add_argument("--window-size=1920,1080")
 driver = webdriver.Chrome(options=chrome_options)
 wait = WebDriverWait(driver, 20)
 
-###################################
-# DYNADOT
-###################################
+
 
 print("Opening Dynadot")
 
@@ -71,9 +67,6 @@ df_dynadot = pd.DataFrame({
     "Price": prices
 })
 
-###################################
-# NAMECHEAP
-###################################
 
 print("Opening Namecheap")
 
@@ -112,9 +105,6 @@ df_namecheap = pd.DataFrame({
     "Price": prices
 })
 
-###################################
-# HOSTINGER
-###################################
 
 print("Opening Hostinger")
 
@@ -162,9 +152,7 @@ df_hostinger = pd.DataFrame({
     "Price": prices
 })
 
-###################################
-# PORKBUN
-###################################
+
 
 print("Opening Porkbun")
 
@@ -199,9 +187,6 @@ df_porkbun = pd.DataFrame({
     "Price": prices
 })
 
-###################################
-# IONOS
-###################################
 
 print("Opening IONOS")
 
@@ -246,19 +231,19 @@ df_ionos = pd.DataFrame({
     "Price":prices
 })
 
-###################################
-# MERGE
-###################################
-
-final_df = pd.concat(
+#merge
+#Bu satır pandas kütüphanesinin concat() fonksiyonunu kullanarak birden fazla DataFrame’i birleştiriyor.
+#Böylece pandas indexleri sıfırdan yeniden oluşturur.
+ #Bu işlemin sonucu final_df adlı yeni bir DataFrame’e atanıyor.
+final_df = pd.concat( 
     [df_dynadot, df_namecheap, df_hostinger, df_porkbun, df_ionos],
-    ignore_index=True
-)
+    ignore_index=True 
+) 
 
-# EKLENDİ → Power BI hata vermesin diye Price kolonunu temizliyoruz
+#Sağ tarafta yapılacak işlemlerin sonucunu tekrar Price kolonuna yaz.
 final_df["Price"] = (
     final_df["Price"]
-    .astype(str)
+    .astype(str) #veriyi başka bir tipe dönüştür.
     .str.replace("$","", regex=False)
     .str.replace("€","", regex=False)
     .str.replace("£","", regex=False)
@@ -266,14 +251,12 @@ final_df["Price"] = (
     .str.strip()
 )
 
-# EKLENDİ → Price kolonunu decimal number'a çeviriyoruz
+
 final_df["Price"] = pd.to_numeric(final_df["Price"], errors="coerce")
 
 final_df["Date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-###################################
-# CSV
-###################################
+#csv
 
 final_df.to_csv("domain_prices.csv", index=False)
 
